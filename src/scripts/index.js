@@ -1,9 +1,19 @@
+import enableValidation from './validate.js'
+import {createCard, likeAndDelete} from './card.js'
+import {initialCards} from './cards.js';
+import {openModal, closeModal} from './modal.js'
+import '../pages/index.css'
+import avatar from '../images/avatar.jpg';
+
 const placeForCards = document.querySelector('.places__list')
 const cardTemplate = document.querySelector('#card-template')
 
 // Поля профиля
 const profileTitle = document.querySelector('.profile__title')
 const profileDescription = document.querySelector('.profile__description')
+
+const profileImage = document.querySelector('.profile__image');
+profileImage.style.backgroundImage = `url(${avatar})`;
 
 // Попапы
 const profilePopup = document.querySelector('.popup_type_edit')
@@ -38,54 +48,10 @@ const cardUrlInput = cardPopup.querySelector('.popup__input_type_url')
 
 // @todo: Темплейт карточки
 
-function createCard(item) {
-    const cardItem = cardTemplate.content.cloneNode(true);
-    const cardTitle = cardItem.querySelector('.card__title');
-    const cardImage = cardItem.querySelector('.card__image');
-
-    cardTitle.textContent = item.name;
-    cardImage.setAttribute('src', item.link);
-    cardImage.setAttribute('alt', item.name);
-
-    cardImage.addEventListener('click', (evt) => {
-        imageContent(cardImage, cardTitle)
-    })
-
-    return cardItem;
-}
-
 initialCards.forEach((item) => {
-    const card = createCard(item);
+    const card = createCard(item, cardTemplate, imageContent);
     placeForCards.append(card);
 });
-
-// @todo: DOM узлы
-
-function closeByEsc(evt) {
-    if (evt.key === 'Escape') {
-        const openedPopup = document.querySelector('.popup_is-opened');
-        if (openedPopup) closeModal(openedPopup);
-    }
-}
-
-function closeByMouse(evt) {
-    const openedPopup = document.querySelector('.popup_is-opened');
-    if (evt.target.classList.contains('popup')) {
-        closeModal(openedPopup);
-    }
-}
-
-function openModal(popup) {      
-    popup.classList.add('popup_is-opened');
-    document.addEventListener('keydown', closeByEsc)
-    document.addEventListener('mousedown', closeByMouse);
-}
-
-function closeModal(popup) {      
-    popup.classList.remove('popup_is-opened');
-    document.removeEventListener('keydown', closeByEsc)
-    document.removeEventListener('mousedown', closeByMouse);
-}
 
 // @todo: Функция редактирования профиля
 
@@ -121,7 +87,7 @@ cardCloseButton.addEventListener('click', (evt) => {
 
 function handleCardFormSubmit(evt) {
     evt.preventDefault(); 
-    const card = createCard({name: cardNameInput.value, link: cardUrlInput.value,})
+    const card = createCard({name: cardNameInput.value, link: cardUrlInput.value,}, cardTemplate, imageContent)
     placeForCards.prepend(card);
     closeModal(cardPopup)
 }
@@ -130,14 +96,7 @@ cardFormElement.addEventListener('submit', handleCardFormSubmit);
 
 // @todo: Функция лайка и удаления карточки
 
-placeForCards.addEventListener('click', function (evt) {
-    if (evt.target.classList.contains('card__like-button')) {
-        evt.target.classList.toggle('card__like-button_is-active')
-    }
-    if (evt.target.classList.contains('card__delete-button')) {
-        evt.target.closest('.card').remove()
-    }
-});
+placeForCards.addEventListener('click', likeAndDelete);
 
 // @todo: Вывести карточки на страницу
 
@@ -151,3 +110,16 @@ function imageContent(cardImage, cardTitle) {
 imageCloseButton.addEventListener('click', (evt) => {
     closeModal(imagePopup)
 })
+
+// Валидация
+
+const validationSettings = {
+  formSelector: '.popup__form',
+  inputSelector: '.popup__input',
+  submitButtonSelector: '.popup__button',
+  inactiveButtonClass: 'popup__button_disabled',
+  inputErrorClass: 'popup__input_type_error',
+  errorClass: 'popup__error_visible'
+};
+
+enableValidation(validationSettings);
