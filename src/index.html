@@ -45,6 +45,17 @@
       </form>
     </div>
   </div>
+  <div class="popup popup_type_avatar">
+    <div class="popup__content">
+      <button type="button" class="popup__close"></button>
+      <h3 class="popup__title">Обновить аватар</h3>
+      <form class="popup__form popup__form_type_avatar" name="avatar-form">
+        <input type="url" name="avatar" placeholder="Ссылка на аватар" class="popup__input popup__input_type_url" required>
+        <span class="popup__error" id="avatar-error"></span>
+        <button type="submit" class="button popup__button">Сохранить</button>
+      </form>
+    </div>
+  </div>
   <div class="popup popup_type_new-card">
     <div class="popup__content">
       <button type="button" class="popup__close"></button>
@@ -74,7 +85,10 @@
     <div class="card__description">
       <h2 class="card__title">
       </h2>
-      <button type="button" class="card__like-button"></button>
+      <div class="card__like-container">
+        <button type="button" class="card__like-button"></button>
+        <span class="card__like-counter">0</span>
+      </div>
     </div>
   </li>
 </template>

@@ -1,9 +1,14 @@
 import enableValidation from './validate.js'
-import {createCard, likeAndDelete} from './card.js'
-import {initialCards} from './cards.js';
+import createCard from './card.js'
 import {openModal, closeModal} from './modal.js'
+import {
+  getUserInfo,
+  getInitialCards,
+  updateUserInfo,
+  addCard,
+  updateAvatar
+} from './api.js';
 import '../pages/index.css'
-import avatar from '../images/avatar.jpg';
 
 const placeForCards = document.querySelector('.places__list')
 const cardTemplate = document.querySelector('#card-template')
@@ -13,7 +18,6 @@ const profileTitle = document.querySelector('.profile__title')
 const profileDescription = document.querySelector('.profile__description')
 
 const profileImage = document.querySelector('.profile__image');
-profileImage.style.backgroundImage = `url(${avatar})`;
 
 // Попапы
 const profilePopup = document.querySelector('.popup_type_edit')
@@ -22,6 +26,8 @@ const cardPopup = document.querySelector('.popup_type_new-card')
 cardPopup.classList.add('popup_is-animated')
 const imagePopup = document.querySelector('.popup_type_image')
 imagePopup.classList.add('popup_is-animated')
+const avatarPopup = document.querySelector('.popup_type_avatar');
+avatarPopup.classList.add('popup_is-animated')
 
 // Поля и кнопка изображения
 const imageCloseButton = imagePopup.querySelector('.popup__close')
@@ -46,12 +52,30 @@ const cardFormElement = cardPopup.querySelector('.popup__form')
 const cardNameInput = cardPopup.querySelector('.popup__input_type_card-name')
 const cardUrlInput = cardPopup.querySelector('.popup__input_type_url')
 
+// Форма аватара
+const avatarForm = avatarPopup.querySelector('.popup__form');
+const avatarInput = avatarPopup.querySelector('.popup__input');
+const avatarButton = avatarPopup.querySelector('.popup__button');
+const avatarCloseButton = avatarPopup.querySelector('.popup__close')
+
 // @todo: Темплейт карточки
 
-initialCards.forEach((item) => {
-    const card = createCard(item, cardTemplate, imageContent);
-    placeForCards.append(card);
-});
+Promise.all([getUserInfo(), getInitialCards()])
+  .then(([userData, cards]) => {
+    profileTitle.textContent = userData.name;
+    profileDescription.textContent = userData.about;
+    profileImage.style.backgroundImage = `url("${userData.avatar}")`;
+    window.myId = userData._id;
+
+    cards.forEach((item) => {
+      const card = createCard(item, cardTemplate, imageContent);
+      placeForCards.append(card);
+    });
+  })
+  .catch((err) => {
+    console.log(err);
+  });
+
 
 // @todo: Функция редактирования профиля
 
@@ -68,12 +92,54 @@ profileCloseButton.addEventListener('click', (evt) => {
 function handleProfileFormSubmit(evt) {
     evt.preventDefault(); 
 
-    profileTitle.textContent = nameInput.value
-    profileDescription.textContent = jobInput.value
-    closeModal(profilePopup)
+    const originalText = profileFormElement.querySelector('.popup__button').textContent;
+    profileFormElement.querySelector('.popup__button').textContent = 'Сохранение...';
+
+    updateUserInfo(nameInput.value, jobInput.value)
+    .then((res) => {
+        profileTitle.textContent = res.name;
+        profileDescription.textContent = res.about;
+        closeModal(profilePopup);
+    })
+    .catch((err) => console.log(err))
+    .finally(() => {
+        profileFormElement.querySelector('.popup__button').textContent = originalText;
+    });
 }
 
 profileFormElement.addEventListener('submit', handleProfileFormSubmit); 
+
+
+// @todo: Функция редактирования аватара
+
+
+profileImage.addEventListener('click', () => {
+    openModal(avatarPopup);
+});
+
+avatarCloseButton.addEventListener('click', (evt) => {
+    closeModal(avatarPopup)
+})
+
+function handleAvatarFormSubmit(evt) {
+    evt.preventDefault();
+
+    const originalText = avatarButton.textContent;
+    avatarButton.textContent = 'Сохранение...';
+
+    updateAvatar(avatarInput.value)
+        .then((res) => {
+            profileImage.style.backgroundImage = `url(${res.avatar})`;
+            closeModal(avatarPopup);
+            avatarForm.reset();
+        })
+        .catch((err) => console.log(err))
+        .finally(() => {
+            avatarButton.textContent = originalText;
+        });
+}
+
+avatarForm.addEventListener('submit', handleAvatarFormSubmit);
 
 // @todo: Функция создания карточки
 
@@ -87,16 +153,24 @@ cardCloseButton.addEventListener('click', (evt) => {
 
 function handleCardFormSubmit(evt) {
     evt.preventDefault(); 
-    const card = createCard({name: cardNameInput.value, link: cardUrlInput.value,}, cardTemplate, imageContent)
-    placeForCards.prepend(card);
-    closeModal(cardPopup)
+
+    const originalText = cardFormElement.querySelector('.popup__button').textContent;
+    cardFormElement.querySelector('.popup__button').textContent = 'Сохранение...';
+
+    addCard(cardNameInput.value, cardUrlInput.value)
+    .then((newCard) => {
+        const card = createCard(newCard, cardTemplate, imageContent);
+        placeForCards.prepend(card);
+        closeModal(cardPopup);
+        cardFormElement.reset();
+    })
+    .catch((err) => console.log(err))
+    .finally(() => {
+        cardFormElement.querySelector('.popup__button').textContent = originalText;
+    });
 }
 
 cardFormElement.addEventListener('submit', handleCardFormSubmit); 
-
-// @todo: Функция лайка и удаления карточки
-
-placeForCards.addEventListener('click', likeAndDelete);
 
 // @todo: Вывести карточки на страницу
 
